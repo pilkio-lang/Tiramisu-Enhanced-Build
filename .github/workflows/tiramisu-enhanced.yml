@@ -40,6 +40,10 @@ jobs:
           MODE: ${{ inputs.mode }}
         run: |
           set -euo pipefail
+          mkdir -p "$GITHUB_WORKSPACE/kit/Logs"
+          (
+          set -Eeuo pipefail
+          trap 'rc=$?; echo "Preflight failed: exit=$rc line=$LINENO" >&2' ERR
           [[ "$ACCEPT_SDK" == true ]] || { echo 'Cocher accept_sdk apres lecture des conditions du SDK Microsoft.'; exit 1; }
           [[ "$MODE" == targeted || "$MODE" == strict ]]
           mkdir -p "$GITHUB_WORKSPACE/kit"
@@ -1699,7 +1703,7 @@ jobs:
           c2l4LWlucHV0cy5weVBLAQIUAxQAAAAIADaGeV2Dk0854AcAAK4SAAAJAAAAAAAAAAAAAACkgdta
           AQB2ZXJpZnkucHlQSwUGAAAAADIAMgD9DAAA4mIBAAAA
           PAYLOAD
-          echo 'a83410a98c10f2780552f575db3bc9dc46f0a55159dda1242148aea81c2f140a  kit.zip' | sha256sum -c -
+          echo 'c048cf783435a345116940fb2109341e6f1275b563328652992cca004495994f  kit.zip' | sha256sum -c -
           unzip -q kit.zip
           rm kit.zip
           for f in *.sh; do bash -n "$f"; done
@@ -1712,6 +1716,7 @@ jobs:
           if [[ "$MODE" == strict ]]; then args+=(--strict); fi
           bash build.sh "${args[@]}" 2>&1 | tee Logs/source-preflight.log
           echo "TRT_CI_CONSENT=1" >> "$GITHUB_ENV"
+          ) 2>&1 | tee "$GITHUB_WORKSPACE/kit/Logs/workflow-preflight.log"
       - name: Recuperer de la place sur la VM ephemere
         run: |
           set -euo pipefail
